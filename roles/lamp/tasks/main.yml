@@ -1,3 +1,83 @@
-#SPDX-License-Identifier: MIT-0
 ---
-# tasks file for roles/lamp
+- name: Instalar paquetes de LAMP y phpMyAdmin
+  community.general.zypper:
+    name: "{{ lamp_packages }}"
+    state: present
+  tags: [lamp, packages]
+
+- name: Habilitar e iniciar Apache y MariaDB
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  loop: "{{ lamp_services }}"
+  tags: [lamp]
+
+- name: Comprobar si el modulo PHP de Apache esta activo
+  ansible.builtin.shell: a2enmod -l | grep -qw php8
+  register: lamp_php_module
+  changed_when: false
+  failed_when: false
+  tags: [lamp]
+
+- name: Activar modulo PHP en Apache
+  ansible.builtin.command: a2enmod php8
+  when: lamp_php_module.rc != 0
+  notify: Recargar Apache
+  tags: [lamp]
+
+- name: Comprobar si root ya usa la contrasena definida
+  ansible.builtin.command: mariadb -u root -e "SELECT 1"
+  environment:
+    MYSQL_PWD: "{{ mariadb_root_password }}"
+  register: lamp_root_check
+  changed_when: false
+  failed_when: false
+  no_log: true
+  tags: [lamp, mariadb]
+
+- name: Establecer contrasena de root de MariaDB
+  ansible.builtin.command: mariadb -u root
+  args:
+    stdin: "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mariadb_root_password }}'; FLUSH PRIVILEGES;"
+  when: lamp_root_check.rc != 0
+  no_log: true
+  tags: [lamp, mariadb]
+
+- name: Buscar usuarios anonimos y base de datos test
+  ansible.builtin.command: >-
+    mariadb -u root -N -e "SELECT (SELECT COUNT(*) FROM mysql.user WHERE User='') + (SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='test')"
+  environment:
+    MYSQL_PWD: "{{ mariadb_root_password }}"
+  register: lamp_insecure
+  changed_when: false
+  no_log: true
+  tags: [lamp, mariadb]
+
+- name: Eliminar usuarios anonimos y base de datos test
+  ansible.builtin.command: mariadb -u root
+  args:
+    stdin: "DELETE FROM mysql.global_priv WHERE User=''; DROP DATABASE IF EXISTS test; FLUSH PRIVILEGES;"
+  environment:
+    MYSQL_PWD: "{{ mariadb_root_password }}"
+  when: lamp_insecure.stdout | trim | int > 0
+  no_log: true
+  tags: [lamp, mariadb]
+
+- name: Desplegar pagina de prueba de PHP
+  ansible.builtin.template:
+    src: info.php.j2
+    dest: "{{ lamp_docroot }}/info.php"
+    owner: root
+    group: root
+    mode: "0644"
+  when: lamp_deploy_info_page
+  tags: [lamp]
+
+- name: Abrir HTTP en el firewall
+  ansible.posix.firewalld:
+    service: http
+    permanent: true
+    immediate: true
+    state: enabled
+  tags: [lamp]

@@ -1,3 +1,15 @@
-#SPDX-License-Identifier: MIT-0
 ---
-# defaults file for roles/lamp
+lamp_packages:
+  - apache2
+  - apache2-mod_php8
+  - php8-mysql
+  - phpMyAdmin
+  - phpMyAdmin-apache
+  - mariadb
+
+lamp_services:
+  - apache2
+  - mariadb
+
+lamp_docroot: /srv/www/htdocs
+lamp_deploy_info_page: true
