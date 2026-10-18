@@ -1,0 +1,10 @@
+---
+samba_system_user: sambauser
+samba_share_name: compartida
+samba_share_path: /srv/compartida
+samba_create_mask: "0664"
+samba_directory_mask: "0775"
+samba_workgroup: WORKGROUP
+samba_services:
+  - smb
+  - nmb

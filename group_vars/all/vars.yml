@@ -1,0 +1,18 @@
+---
+# Conexión: el sudo usa la contraseña guardada en el vault
+ansible_become_password: "{{ vault_become_password }}"
+
+# Samba
+samba_system_user: sambauser
+samba_share_name: compartida
+samba_share_path: /srv/compartida
+samba_create_mask: "0664"
+samba_directory_mask: "0775"
+samba_user_password: "{{ vault_samba_user_password }}"
+
+# MariaDB
+mariadb_root_password: "{{ vault_mariadb_root_password }}"
+
+# Repositorios a deshabilitar (alias de: zypper lr -d)
+common_disabled_repos:
+  - openSUSE:repo-openh264

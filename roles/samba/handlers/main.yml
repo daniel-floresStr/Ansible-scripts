@@ -1,0 +1,6 @@
+---
+- name: Recargar Samba
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: reloaded
+  loop: "{{ samba_services }}"

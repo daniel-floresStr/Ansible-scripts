@@ -1,0 +1,12 @@
+---
+# Alias de repositorios a deshabilitar (se ven con: zypper lr -d)
+common_disabled_repos: []
+
+# Paquetes base necesarios para los demás roles
+common_base_packages:
+  - python3
+  - firewalld
+  - curl
+
+# Refrescar metadatos al instalar paquetes base (más lento si es true)
+common_update_cache: false

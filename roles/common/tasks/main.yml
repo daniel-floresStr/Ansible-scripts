@@ -1,0 +1,30 @@
+---
+- name: Deshabilitar repositorios innecesarios
+  ansible.builtin.command: "zypper --non-interactive modifyrepo --disable {{ item }}"
+  loop: "{{ common_disabled_repos }}"
+  environment:
+    LC_ALL: C
+  register: common_repo_result
+  changed_when: "'Nothing to change' not in common_repo_result.stdout"
+  tags: [repos]
+
+- name: Instalar paquetes base
+  community.general.zypper:
+    name: "{{ common_base_packages }}"
+    state: present
+    update_cache: "{{ common_update_cache }}"
+  tags: [packages]
+
+- name: Habilitar e iniciar firewalld
+  ansible.builtin.systemd:
+    name: firewalld
+    enabled: yes
+    state: started
+  tags: [packages]
+
+- name: Actualizar todos los paquetes del sistema
+  community.general.zypper:
+    name: '*'
+    state: latest
+    update_cache: yes
+  tags: [update, never]

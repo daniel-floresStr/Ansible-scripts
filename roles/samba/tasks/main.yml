@@ -1,0 +1,69 @@
+---
+- name: Instalar Samba
+  community.general.zypper:
+    name: samba
+    state: present
+  tags: [samba, packages]
+
+- name: Crear usuario del sistema para Samba
+  ansible.builtin.user:
+    name: "{{ samba_system_user }}"
+    shell: /sbin/nologin
+    create_home: no
+    state: present
+  tags: [samba]
+
+- name: Crear directorio compartido
+  ansible.builtin.file:
+    path: "{{ samba_share_path }}"
+    state: directory
+    owner: "{{ samba_system_user }}"
+    group: users
+    mode: "{{ samba_directory_mask }}"
+    setype: samba_share_t
+  tags: [samba]
+
+- name: Desplegar smb.conf desde plantilla
+  ansible.builtin.template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: "0644"
+    backup: yes
+    validate: "testparm -s %s"
+  notify: Recargar Samba
+  tags: [samba]
+
+- name: Comprobar si el usuario ya existe en Samba
+  ansible.builtin.shell: "set -o pipefail; pdbedit -L | cut -d: -f1 | grep -qx '{{ samba_system_user }}'"
+  args:
+    executable: /bin/bash
+  register: samba_user_check
+  changed_when: false
+  failed_when: false
+  tags: [samba]
+
+- name: Crear usuario de Samba
+  ansible.builtin.command: "smbpasswd -a -s {{ samba_system_user }}"
+  args:
+    stdin: "{{ samba_user_password }}\n{{ samba_user_password }}"
+  when: samba_user_check.rc != 0
+  no_log: true
+  tags: [samba]
+
+- name: Habilitar e iniciar servicios de Samba
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  loop: "{{ samba_services }}"
+  tags: [samba]
+
+- name: Abrir Samba en el firewall
+  ansible.posix.firewalld:
+    service: samba
+    permanent: true
+    immediate: true
+    state: enabled
+  tags: [samba]
