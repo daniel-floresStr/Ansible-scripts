@@ -1,2 +1,2 @@
 [servidor]
-192.168.100.71
+aso-destino ansible_host=192.168.6.21 ansible_user=fafo1509 ansible_ssh_private_key_file=/home/fafo1509/.ssh/ansible_tarea3 ansible_python_interpreter=/usr/bin/python3.13
