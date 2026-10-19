@@ -26,8 +26,14 @@
   notify: Recargar Apache
   tags: [lamp]
 
-- name: Comprobar si root ya usa la contrasena definida
-  ansible.builtin.command: mariadb -u root -e "SELECT 1"
+- name: Comprobar si root usa la contrasena de Vault por TCP
+  ansible.builtin.command:
+    argv:
+      - mariadb
+      - --protocol=TCP
+      - --host=127.0.0.1
+      - --user=root
+      - --execute=SELECT 1
   environment:
     MYSQL_PWD: "{{ mariadb_root_password }}"
   register: lamp_root_check
@@ -36,10 +42,15 @@
   no_log: true
   tags: [lamp, mariadb]
 
-- name: Establecer contrasena de root de MariaDB
-  ansible.builtin.command: mariadb -u root
-  args:
-    stdin: "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mariadb_root_password }}'; FLUSH PRIVILEGES;"
+- name: Configurar contrasena de root conservando acceso unix_socket
+  ansible.builtin.command:
+    argv:
+      - mariadb
+      - --protocol=socket
+      - --user=root
+    stdin: >-
+      SET PASSWORD FOR 'root'@'localhost' =
+      PASSWORD('{{ mariadb_root_password | replace('\\', '\\\\') | replace("'", "''") }}');
   when: lamp_root_check.rc != 0
   no_log: true
   tags: [lamp, mariadb]

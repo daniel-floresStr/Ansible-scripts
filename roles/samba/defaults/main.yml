@@ -7,4 +7,3 @@ samba_directory_mask: "0775"
 samba_workgroup: WORKGROUP
 samba_services:
   - smb
-  - nmb

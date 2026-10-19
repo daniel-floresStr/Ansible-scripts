@@ -14,5 +14,4 @@ samba_user_password: "{{ vault_samba_user_password }}"
 mariadb_root_password: "{{ vault_mariadb_root_password }}"
 
 # Repositorios a deshabilitar (alias de: zypper lr -d)
-common_disabled_repos:
-  - openSUSE:repo-openh264
+common_disabled_repos: []
