@@ -85,10 +85,20 @@
   when: lamp_deploy_info_page
   tags: [lamp]
 
-- name: Abrir HTTP en el firewall
+- name: Permitir HTTP desde la red del laboratorio
   ansible.posix.firewalld:
-    service: http
+    zone: public
+    rich_rule: 'rule family="ipv4" source address="192.168.6.0/24" service name="http" accept'
     permanent: true
     immediate: true
     state: enabled
+  tags: [lamp]
+
+- name: Deshabilitar HTTP global
+  ansible.posix.firewalld:
+    zone: public
+    service: http
+    permanent: true
+    immediate: true
+    state: disabled
   tags: [lamp]

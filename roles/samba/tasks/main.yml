@@ -66,10 +66,23 @@
   loop: "{{ samba_services }}"
   tags: [samba]
 
-- name: Abrir Samba en el firewall
+- name: Permitir Samba desde redes autorizadas
   ansible.posix.firewalld:
-    service: samba
+    zone: public
+    rich_rule: 'rule family="ipv4" source address="{{ item }}" service name="samba" accept'
     permanent: true
     immediate: true
     state: enabled
+  loop:
+    - 192.168.6.0/24
+    - 192.168.1.0/24
+  tags: [samba]
+
+- name: Deshabilitar Samba global
+  ansible.posix.firewalld:
+    zone: public
+    service: samba
+    permanent: true
+    immediate: true
+    state: disabled
   tags: [samba]
